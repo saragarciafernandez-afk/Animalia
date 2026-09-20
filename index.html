@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Animalia</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#101114;color:#fff}
+body{overflow:hidden}.app{height:100vh;display:flex;flex-direction:column}
+header{height:62px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#15161a;border-bottom:1px solid #292b31;z-index:10}
+.logo{font-size:21px;font-weight:800}.logo span{color:#67e8a5}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+.icon-btn{width:42px;height:42px;border-radius:50%;background:#25272d;font-size:19px}
+#feed{flex:1;overflow-y:auto;scroll-snap-type:y mandatory;scroll-behavior:smooth}
+.screen{height:calc(100vh - 62px);min-height:500px;scroll-snap-align:start;position:relative;display:flex;align-items:flex-end;padding:24px 20px 88px;overflow:hidden}
+.screen.home{align-items:center;justify-content:center;text-align:center;background:linear-gradient(145deg,#16231d,#111216 60%,#1c1d24)}
+.home h1{font-size:clamp(42px,9vw,82px);margin:0 0 10px}.home p{max-width:620px;color:#c7cad1;font-size:18px;line-height:1.5}
+.primary{margin-top:18px;padding:13px 20px;border-radius:999px;background:#67e8a5;color:#08120d;font-weight:800}
+.animal{background:linear-gradient(135deg,var(--a),#111 75%)}
+.animal:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 75% 25%,rgba(255,255,255,.16),transparent 30%),linear-gradient(0deg,rgba(0,0,0,.85),transparent 60%);pointer-events:none}
+.emoji{position:absolute;right:8%;top:17%;font-size:clamp(110px,25vw,230px);filter:drop-shadow(0 18px 20px rgba(0,0,0,.35));user-select:none}
+.info{position:relative;z-index:2;max-width:650px}.tag{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.14);font-size:12px;margin-bottom:8px}.info h2{font-size:clamp(38px,8vw,68px);margin:0}.info p{color:#e2e3e7;line-height:1.5;max-width:620px}.facts{display:flex;flex-wrap:wrap;gap:8px}.fact{padding:8px 11px;border-radius:10px;background:rgba(255,255,255,.12);font-size:13px}
+.actions{position:absolute;right:15px;bottom:105px;z-index:4;display:flex;flex-direction:column;gap:10px}.action{width:48px;height:48px;border-radius:50%;background:rgba(20,20,24,.72);border:1px solid rgba(255,255,255,.16);font-size:21px}.action.active{background:#67e8a5;color:#08120d}
+.bottom{position:fixed;bottom:0;left:0;right:0;height:72px;background:rgba(16,17,20,.96);border-top:1px solid #292b31;display:flex;justify-content:space-around;align-items:center;z-index:20}.bottom button{background:none;color:#aeb2bb;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:4px}.bottom button.active{color:#67e8a5}.bottom b{font-size:20px}
+.search{position:fixed;top:70px;left:12px;right:12px;z-index:30;display:none}.search input{width:100%;padding:13px 16px;border-radius:14px;border:1px solid #3a3c44;background:#18191d;color:#fff;outline:none}
+.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(15px);background:#fff;color:#111;padding:10px 15px;border-radius:999px;opacity:0;pointer-events:none;transition:.2s;z-index:50;font-weight:700}.toast.show{opacity:1;transform:translateX(-50%)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:20px;z-index:100}.modal.open{display:flex}.box{width:min(620px,100%);background:#191a1f;border:1px solid #30323a;border-radius:22px;padding:24px;box-shadow:0 20px 70px #000}.box h3{font-size:30px;margin:0 0 10px}.close{float:right;width:38px;height:38px;border-radius:50%;background:#292b31}.hidden{display:none!important}
+.light{background:#f4f5f7;color:#17181b}.light header,.light .bottom{background:#fff;border-color:#ddd}.light .home{background:linear-gradient(145deg,#e8f8ef,#fff)}.light .info p{color:#333}.light .search input{background:#fff;color:#111}.light .box{background:#fff;color:#111}
+@media(max-width:600px){.screen{padding-left:16px;padding-right:16px}.emoji{right:3%;top:13%}.actions{right:10px}.info{padding-right:45px}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<header><div class="logo">🐾 <span>Animalia</span></div><button class="icon-btn" id="theme">☾</button></header>
+<div class="search" id="search"><input id="searchInput" placeholder="Buscar animal..."></div>
+<main id="feed">
+<section class="screen home" id="home">
+<div><div style="font-size:60px">🐾</div><h1>Animalia</h1><p>Descubre animales de una forma sencilla y divertida. Desliza hacia arriba para explorar.</p><button class="primary" id="start">Empezar a explorar</button></div>
+</section>
+</main>
+</div>
+<nav class="bottom">
+<button class="active" id="homeBtn"><b>⌂</b>Inicio</button>
+<button id="searchBtn"><b>⌕</b>Buscar</button>
+<button id="randomBtn"><b>⤨</b>Aleatorio</button>
+</nav>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="box"><button class="close" id="close">×</button><h3 id="modalTitle"></h3><p id="modalText"></p></div></div>
+
+<script>
+const animals=[
+["León","Mamífero","🦁","#b97935","Vive principalmente en África y es conocido por su vida social en grupos.","Sabana","Carnívoro"],
+["Elefante","Mamífero","🐘","#68756b","Es el animal terrestre más grande y utiliza su trompa para muchas tareas.","Sabana","Herbívoro"],
+["Pingüino","Ave","🐧","#315b73","Es un ave adaptada a nadar y muchas especies viven en el hemisferio sur.","Costa","Carnívoro"],
+["Tigre","Mamífero","🐯","#a85525","Es un gran felino asiático y cada individuo presenta un patrón de rayas característico.","Bosque","Carnívoro"],
+["Jirafa","Mamífero","🦒","#b8943e","Su largo cuello le permite alcanzar hojas situadas en las partes altas de los árboles.","Sabana","Herbívoro"],
+["Panda","Mamífero","🐼","#4d554f","El panda gigante se alimenta principalmente de bambú y vive en bosques de montaña.","Montaña","Herbívoro"],
+["Delfín","Mamífero","🐬","#387c98","Es un mamífero marino inteligente que utiliza sonidos para comunicarse y orientarse.","Océano","Carnívoro"],
+["Zorro","Mamífero","🦊","#a84e2c","Es un cánido adaptable que puede vivir en bosques, campos y zonas cercanas a ciudades.","Bosque","Omnívoro"],
+["Águila","Ave","🦅","#65503d","Las águilas son aves rapaces con una visión muy desarrollada y gran capacidad de vuelo.","Montaña","Carnívoro"],
+["Koala","Mamífero","🐨","#73756f","Es un marsupial australiano que pasa gran parte del tiempo descansando en árboles.","Bosque","Herbívoro"]
+];
+
+const feed=document.getElementById("feed"),toast=document.getElementById("toast"),modal=document.getElementById("modal");
+const favs=new Set(JSON.parse(localStorage.getItem("animalia-favs")||"[]"));
+
+function showToast(t){toast.textContent=t;toast.classList.add("show");clearTimeout(window.tt);window.tt=setTimeout(()=>toast.classList.remove("show"),1600)}
+function go(id){document.getElementById(id)?.scrollIntoView({behavior:"smooth"});}
+
+animals.forEach((a,i)=>{
+ const [name,type,emoji,bg,desc,habitat,diet]=a;
+ const s=document.createElement("section");
+ s.className="screen animal";s.id="animal-"+i;s.dataset.name=name.toLowerCase();s.style.setProperty("--a",bg);
+ s.innerHTML=`<div class="emoji">${emoji}</div><div class="info"><span class="tag">${type}</span><h2>${name}</h2><p>${desc}</p><div class="facts"><span class="fact">🌍 ${habitat}</span><span class="fact">🍃 ${diet}</span></div></div>
+ <div class="actions"><button class="action fav" data-i="${i}" title="Favorito">♡</button><button class="action infoBtn" data-i="${i}" title="Información">ⓘ</button><button class="action speak" data-i="${i}" title="Escuchar">🔊</button></div>`;
+ feed.appendChild(s);
+});
+
+document.querySelectorAll(".fav").forEach(b=>b.onclick=e=>{
+ e.stopPropagation();const i=+b.dataset.i;
+ if(favs.has(i)){favs.delete(i);b.textContent="♡";showToast("Quitado de favoritos")}
+ else{favs.add(i);b.textContent="♥";showToast("Añadido a favoritos")}
+ localStorage.setItem("animalia-favs",JSON.stringify([...favs]));
+});
+favs.forEach(i=>{const b=document.querySelector(`.fav[data-i="${i}"]`);if(b)b.textContent="♥"});
+
+document.querySelectorAll(".infoBtn").forEach(b=>b.onclick=e=>{
+ e.stopPropagation();const a=animals[+b.dataset.i];document.getElementById("modalTitle").textContent=a[2]+" "+a[0];document.getElementById("modalText").textContent=a[4]+" Hábitat: "+a[5]+". Alimentación: "+a[6]+".";modal.classList.add("open");
+});
+document.getElementById("close").onclick=()=>modal.classList.remove("open");
+modal.onclick=e=>{if(e.target===modal)modal.classList.remove("open")};
+
+document.querySelectorAll(".speak").forEach(b=>b.onclick=e=>{
+ e.stopPropagation();const a=animals[+b.dataset.i];
+ if("speechSynthesis" in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(a[0]+". "+a[4]));showToast("Reproduciendo información")}
+ else showToast("La voz no está disponible");
+});
+
+document.getElementById("start").onclick=()=>go("animal-0");
+document.getElementById("homeBtn").onclick=()=>go("home");
+document.getElementById("randomBtn").onclick=()=>go("animal-"+Math.floor(Math.random()*animals.length));
+
+const search=document.getElementById("search");
+document.getElementById("searchBtn").onclick=()=>{
+ search.style.display=search.style.display==="block"?"none":"block";
+ if(search.style.display==="block")document.getElementById("searchInput").focus();
+};
+document.getElementById("searchInput").oninput=e=>{
+ const q=e.target.value.toLowerCase();
+ document.querySelectorAll(".animal").forEach(s=>s.classList.toggle("hidden",q&&!s.dataset.name.includes(q)));
+};
+
+document.getElementById("theme").onclick=()=>{
+ document.body.classList.toggle("light");
+ const light=document.body.classList.contains("light");
+ document.getElementById("theme").textContent=light?"☀":"☾";
+ localStorage.setItem("animalia-theme",light?"light":"dark");
+};
+if(localStorage.getItem("animalia-theme")==="light"){document.body.classList.add("light");document.getElementById("theme").textContent="☀"}
+
+feed.addEventListener("scroll",()=>{
+ let closest=null,dist=Infinity;
+ document.querySelectorAll(".screen").forEach(s=>{const d=Math.abs(s.getBoundingClientRect().top-62);if(d<dist){dist=d;closest=s}});
+ document.querySelectorAll(".bottom button").forEach(b=>b.classList.remove("active"));
+ if(closest?.id==="home")document.getElementById("homeBtn").classList.add("active");
+});
+
+showToast("Animalia lista para explorar 🐾");
+</script>
+</body>
+</html>
